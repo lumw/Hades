@@ -1,6 +1,7 @@
 package com.danyun.hades.restserver;
 
 import com.danyun.hades.common.model.redis.UfoCatcher;
+import com.danyun.hades.connection.container.RestConnectionMap;
 import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.UfoCatcherDao;
 import com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl;
@@ -43,6 +44,8 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
 
         StringBuilder toCatcherSockMessage = new StringBuilder();
 
+        String catcherId;
+
         if (msg instanceof FullHttpRequest) {
             FullHttpRequest req = (FullHttpRequest) msg;//客户端的请求对象
             JSONObject responseJson = new JSONObject();//新建一个返回消息的Json对象
@@ -56,6 +59,9 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
                 return;
             }
 
+            catcherId = requestJson.getString("catcherId");
+            RestConnectionMap.getInstance().put(catcherId, ctx.channel());
+
             //获取客户端的URL
             String uri = req.uri();
 
@@ -64,7 +70,7 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
 
                 if (uri.equals("/operation")) {
 
-                    String catcherId = requestJson.getString("catcherId");
+                    //catcherId = requestJson.getString("catcherId");
                     String actionCode = requestJson.getString("actionCode");
                     String recordId = requestJson.getString("recordId");
 
@@ -80,7 +86,7 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
 
                 } else if (req.uri().equals("/checkstatus")) {
 
-                    String catcherId = requestJson.getString("catcherId");
+                    //String catcherId = requestJson.getString("catcherId");
                     String actionCode = requestJson.getString("actionCode");
 
                     System.out.println("娃娃机编号:" + catcherId + ", 操作代码: " + actionCode);
@@ -89,7 +95,7 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
 
                 } else if (req.uri().equals("/heartbreak")){
 
-                    String catcherId = requestJson.getString("catcherId");
+                    //String catcherId = requestJson.getString("catcherId");
                     String actionCode = requestJson.getString("actionCode");
 
                     System.out.println("娃娃机编号:" + catcherId + ", 操作代码: " + actionCode);
@@ -151,4 +157,7 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
         String jsonStr = jsonBuf.toString(CharsetUtil.UTF_8);
         return jsonStr;
     }
+
+
+
 }

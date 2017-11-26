@@ -1,22 +1,23 @@
-package com.danyun.hades.common.model;
+package com.danyun.hades.connection.container;
 
 
 import io.netty.channel.Channel;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CatcherSocketMap {
+public class SocketConnectionMap {
 
+    //用来保存和娃娃机的连接
     private ConcurrentHashMap<String, Channel> catcherSocketList = new ConcurrentHashMap<String, Channel>();
 
-    private static CatcherSocketMap instance = new CatcherSocketMap();
+    private static SocketConnectionMap instance = new SocketConnectionMap();
 
-    private CatcherSocketMap() {
+    private SocketConnectionMap() {
     }
 
-    public static CatcherSocketMap getInstance() {
+    public static SocketConnectionMap getInstance() {
         if (instance == null) {
-            instance = new CatcherSocketMap();
+            instance = new SocketConnectionMap();
         }
         return instance;
     }
