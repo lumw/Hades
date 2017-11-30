@@ -10,6 +10,7 @@
     <bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
         <property name="maxIdle" value="${redis.maxIdle}"/>
         <property name="maxTotal" value="${redis.maxActive}"/>
+        <property name="minIdle" value="${redis.minIdle}"/>
         <property name="maxWaitMillis" value="${redis.maxWait}"/>
         <property name="testOnBorrow" value="${redis.testOnBorrow}"/>
     </bean>
@@ -26,4 +27,17 @@
     <bean id="catcherServerHandler" class="com.danyun.hades.sockserver.catcher.CatcherServerHandler">
         <property name="ufoCatcherDao" ref="userDao"/>
     </bean>
+
+
+    <!-- Http client Factory -->
+    <!-- <bean id="httpClientFactory"
+          class="org.springframework.http.client.SimpleClientHttpRequestFactory">
+        <property name="connectTimeout" value="5000"/>
+        <property name="readTimeout" value="5000"/>
+    </bean> -->
+
+    <!-- RestTemplate -->
+    <!--<bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
+        <constructor-arg ref="httpClientFactory"/>
+    </bean>-->
 </beans>

@@ -2,7 +2,7 @@
 
 <!-- status : 指定log4j本身的打印日志的级别.ALL< Trace < DEBUG < INFO < WARN < ERROR
     < FATAL < OFF。 monitorInterval : 用于指定log4j自动重新配置的监测间隔时间，单位是s,最小是5s. -->
-<Configuration status="DEBUG" monitorInterval="30">
+<Configuration status="INFO" monitorInterval="30">
     <Properties>
         <!-- 配置日志文件输出目录 ${sys:user.home} -->
         <Property name="LOG_HOME">./logs</Property>
@@ -89,15 +89,15 @@
     <!--然后定义logger，只有定义了logger并引入的appender，appender才会生效-->
     <Loggers>
         <!--过滤掉spring和mybatis的一些无用的DEBUG信息-->
-        <logger name="org.springframework" level="DEBUG"></logger>
+        <logger name="org.springframework" level="INFO"></logger>
 
         <!-- 第三方日志系统 -->
-        <logger name="org.springframework.core" level="debug"/>
-        <logger name="org.springframework.beans" level="debug"/>
-        <logger name="org.springframework.context" level="debug"/>
-        <logger name="org.springframework.web" level="debug"/>
-        <logger name="org.jboss.netty" level="warn"/>
-        <logger name="org.apache.http" level="warn"/>
+        <!-- <logger name="org.springframework.core" level="debug"/> -->
+        <!-- <logger name="org.springframework.beans" level="debug"/> -->
+        <!-- <logger name="org.springframework.context" level="debug"/> -->
+        <!-- <logger name="org.springframework.web" level="debug"/> -->
+        <!-- <logger name="org.jboss.netty" level="warn"/> -->
+        <!-- <logger name="org.apache.http" level="warn"/> -->
 
 
         <!-- 配置日志的根节点 -->

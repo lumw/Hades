@@ -9,11 +9,14 @@ import com.danyun.hades.redis.dao.UfoCatcherDao;
 import com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl;
 import com.danyun.hades.restserver.RestServerOutBoundHandler;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.util.AsciiString;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -32,6 +35,8 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
     @Autowired
     private UfoCatcherDao ufoCatcherDao;
 
+    private static Logger logger = LogManager.getLogger(CatcherServerHandler.class);
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msgfromCatcher) throws Exception {
 
@@ -43,29 +48,28 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
         String catcherId = msgfromCatcher.substring(0, 4);
         String actionCode = msgfromCatcher.substring(4, 8);
 
-        System.out.println("catcherId = " + catcherId);
-        System.out.println("actionCode = " + actionCode);
-
+        System.out.println("catcherId = " + catcherId + ", actionCode = " + actionCode);
         String rspStrToCatcher;
 
         if("0100".equals(actionCode)){
 
             //将娃娃机与服务器链接注册进内存中
-            if(!SocketConnectionMap.getInstance().contains(catcherId)){
-                SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
+            if(SocketConnectionMap.getInstance().contains(catcherId)){
+                SocketConnectionMap.getInstance().remove(catcherId);
             }
+            SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
 
-            System.out.println("编号为:" + catcherId + "的娃娃机从" + ctx.channel().remoteAddress() + " 注册进入系统");
+            System.out.println("娃娃机[" + catcherId + "]从" + ctx.channel().remoteAddress() + " 注册进入系统");
 
             ufoCatcherDao.catcherRegist(new UfoCatcher(catcherId, ConstantString.Catcher_Status_Free));
 
-            rspStrToCatcher = catcherId + actionCode + "0000";
+            rspStrToCatcher = catcherId + actionCode + "0000" + "\n";
             System.out.println("发送给娃娃机的响应信息" + rspStrToCatcher);
             ctx.writeAndFlush(rspStrToCatcher);
 
         }else if("9999".equals(actionCode)){
-            rspStrToCatcher = catcherId + actionCode;
-            System.out.println("发送给娃娃机的响应信息" + rspStrToCatcher);
+            rspStrToCatcher = catcherId + actionCode + "\n";
+            System.out.println("应答心跳信息" + rspStrToCatcher);
             ctx.writeAndFlush(rspStrToCatcher);
 
         }else if("0101".equals(actionCode)){
@@ -73,7 +77,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             String operationId = msgfromCatcher.substring(8, 12);
             String gameResult = msgfromCatcher.substring(12, 13);
             System.out.println("游戏结果" + gameResult);
-            rspStrToCatcher = catcherId + actionCode + operationId + "0000";
+            rspStrToCatcher = catcherId + actionCode + operationId + "0000" + "\n";
             System.out.println("发送给娃娃机的响应信息" + rspStrToCatcher);
 
             //解锁娃娃机，设置状态为空闲
@@ -81,32 +85,9 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
             ctx.writeAndFlush(rspStrToCatcher);
 
-        }else if( "0002".equals(actionCode) || "0003".equals(actionCode) || "0004".equals(actionCode) || "0005".equals(actionCode)
-                || "0006".equals(actionCode) || "0007".equals(actionCode) || "0008".equals(actionCode)
-                || "0009".equals(actionCode) || "00010".equals(actionCode) || "0011".equals(actionCode)
-                || "0012".equals(actionCode) || "0013".equals(actionCode) || "0014".equals(actionCode)){
-
-            System.out.println("收到娃娃机响应信息: " + msgfromCatcher);
-
-            String resultCode = msgfromCatcher.substring(8, 12);
-            JSONObject rspJson = new JSONObject();
-            rspJson.put("resultCode", resultCode);
-
-            RestConnectionMap.getInstance().getMap().get(catcherId).pipeline().remove(RestServerOutBoundHandler.class);
-
-
-            byte[] jsonByteByte = rspJson.toString().getBytes();
-            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(jsonByteByte));
-            response.headers().set(CONTENT_TYPE, "application/json");
-            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
-            response.headers().set(CONNECTION, KEEP_ALIVE);
-            RestConnectionMap.getInstance().getMap().get(catcherId).writeAndFlush(response);
-            RestConnectionMap.getInstance().remove(catcherId);
-
-
         }else if ( "0001".equals(actionCode) ){
 
-            System.out.println("收到娃娃机响应信息: " + msgfromCatcher);
+                System.out.println("收到娃娃机响应信息: " + msgfromCatcher);
 
             String recordId = msgfromCatcher.substring(8, 16);
             String resultCode = msgfromCatcher.substring(16, 20);
@@ -125,8 +106,32 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             response.headers().set(CONNECTION, KEEP_ALIVE);
 
 
-            RestConnectionMap.getInstance().getMap().get(catcherId).writeAndFlush(response);
+            Channel channel = RestConnectionMap.getInstance().getMap().get(catcherId);
+            channel.writeAndFlush(response);
+            channel.close();
             RestConnectionMap.getInstance().remove(catcherId);
+
+        } else { //其他应答指令
+
+            System.out.println("收到操作应答指令: " + msgfromCatcher);
+
+            String resultCode = msgfromCatcher.substring(8, 12);
+            JSONObject rspJson = new JSONObject();
+            rspJson.put("resultCode", resultCode);
+
+
+            RestConnectionMap.getInstance().getMap().get(catcherId).pipeline().remove(RestServerOutBoundHandler.class);
+            byte[] jsonByteByte = rspJson.toString().getBytes();
+            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(jsonByteByte));
+            response.headers().set(CONTENT_TYPE, "application/json");
+            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
+            response.headers().set(CONNECTION, KEEP_ALIVE);
+
+            Channel channel = RestConnectionMap.getInstance().getMap().get(catcherId);
+            channel.writeAndFlush(response);
+            channel.close();
+            RestConnectionMap.getInstance().remove(catcherId);
+
         }
     }
 

@@ -70,19 +70,16 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
 
                 if (uri.equals("/operation")) {
 
-                    //catcherId = requestJson.getString("catcherId");
-                    String actionCode = requestJson.getString("actionCode");
-                    String recordId = requestJson.getString("recordId");
+                    System.out.println("收到操作娃娃机指令json : " + requestJson.toString());
 
+                    String actionCode = requestJson.getString("actionCode");
                     if(ConstantString.Catcher_Operation_PalyGame.equals(actionCode)){
-                        ufoCatcherDao.update(new UfoCatcher(catcherId, ConstantString.Catcher_Status_Using) );
+                        ufoCatcherDao.update(new UfoCatcher(catcherId, ConstantString.Catcher_Status_Using));
+                        String recordId = requestJson.getString("recordId");
                         toCatcherSockMessage.append(catcherId).append(actionCode).append(recordId);
                     }else{
                         toCatcherSockMessage.append(catcherId).append(actionCode);
                     }
-
-                    System.out.println("娃娃机编号:" + catcherId + ", 操作代码: " + actionCode + ", 操作记录编号:" + recordId);
-
 
                 } else if (req.uri().equals("/checkstatus")) {
 
@@ -113,7 +110,7 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
             }
 
             //将数据发送到UFOCatcher
-            ctx.write(toCatcherSockMessage.toString());
+            ctx.write(toCatcherSockMessage.toString() + "\n");
         }
     }
 
