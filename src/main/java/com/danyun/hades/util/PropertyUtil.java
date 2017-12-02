@@ -36,10 +36,9 @@ public class PropertyUtil {
                 }
             } catch (IOException e) {
                 //logger.error("配置文件流关闭出现异常");
+                e.printStackTrace();
             }
         }
-        //logger.info("加载properties文件内容完成...........");
-        //logger.info("properties文件内容：" + props);
     }
 
     public static String getProperty(String key) {

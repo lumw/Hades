@@ -28,6 +28,7 @@ public class RestServerThread extends Thread{
             ch.closeFuture().sync();
 
         } catch (InterruptedException e) {
+            System.out.println("------出异常了");
             e.printStackTrace();
         } finally {
             bossGroup.shutdownGracefully();

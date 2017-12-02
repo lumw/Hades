@@ -34,6 +34,7 @@ public class CatcherServerThread extends Thread{
             f.channel().closeFuture().sync();
 
         } catch (InterruptedException e) {
+            System.out.println("------出异常了");
             e.printStackTrace();
         } finally {
             bossGroup.shutdownGracefully();
