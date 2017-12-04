@@ -4,9 +4,8 @@ package com.danyun.hades.redis.dao.impl;
 import com.danyun.hades.common.model.redis.UfoCatcher;
 import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.UfoCatcherDao;
+import com.danyun.hades.util.SpringContainer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
 
 public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
@@ -16,15 +15,17 @@ public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
 
     public void catcherRegist(final UfoCatcher ufoCatcher) {
 
-        ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
-        redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
+        //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
+        //redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
+        redisTemplate = (RedisTemplate<String, Object>) SpringContainer.getInstance().getBean("redisTemplate");
         redisTemplate.opsForHash().put(ConstantString.Reids_Key_CatcherStatus, ufoCatcher.getUFOCatcherId(), ufoCatcher.getUfoCatcherStatus());
     }
 
     public void delete(String catcherId) {
 
-        ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
-        redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
+        //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
+        //redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
+        redisTemplate = (RedisTemplate<String, Object>) SpringContainer.getInstance().getBean("redisTemplate");
         redisTemplate.opsForHash().delete(ConstantString.Reids_Key_CatcherStatus, catcherId);
     }
 
@@ -41,8 +42,10 @@ public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
 
     public String get(final String catcherId) {
 
-        ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
-        redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
+        //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
+        //redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
+
+        redisTemplate = (RedisTemplate<String, Object>) SpringContainer.getInstance().getBean("redisTemplate");
         return (String) redisTemplate.opsForHash().get(ConstantString.Reids_Key_CatcherStatus, catcherId);
     }
 }

@@ -8,6 +8,7 @@ import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.UfoCatcherDao;
 import com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl;
 import com.danyun.hades.restserver.RestServerOutBoundHandler;
+import com.danyun.hades.util.SpringContainer;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -19,8 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -40,8 +39,10 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msgfromCatcher) throws Exception {
 
-        ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
-        UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) context.getBean("userDao");
+        //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
+        //UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) context.getBean("userDao");
+
+        UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl)SpringContainer.getInstance().getBean("userDao");
 
         System.out.println("接收到来自 " + ctx.channel().remoteAddress() + " 的指令 : " + msgfromCatcher);
 
@@ -64,7 +65,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             ufoCatcherDao.catcherRegist(new UfoCatcher(catcherId, ConstantString.Catcher_Status_Free));
 
             rspStrToCatcher = catcherId + actionCode + "0000" + "\n";
-            System.out.println("发送给娃娃机的响应信息" + rspStrToCatcher);
+            System.out.println("应答娃娃机登录信息" + rspStrToCatcher);
             ctx.writeAndFlush(rspStrToCatcher);
 
         }else if("9999".equals(actionCode)){
@@ -78,7 +79,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             String gameResult = msgfromCatcher.substring(12, 13);
             System.out.println("游戏结果" + gameResult);
             rspStrToCatcher = catcherId + actionCode + operationId + "0000" + "\n";
-            System.out.println("发送给娃娃机的响应信息" + rspStrToCatcher);
+            System.out.println("应答游戏结果通知" + rspStrToCatcher);
 
             //解锁娃娃机，设置状态为空闲
             ufoCatcherDao.catcherRegist(new UfoCatcher(catcherId, ConstantString.Catcher_Status_Free));
@@ -149,6 +150,13 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
         //ctx.writeAndFlush("Welcome to " + InetAddress.getLocalHost().getHostName() + " service!\n");
 
         super.channelActive(ctx);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception{
+
+        System.out.println("连接已经失效.........");
+        super.channelInactive(ctx);
     }
 
     public void setUfoCatcherDao(UfoCatcherDao ufoCatcherDao) {

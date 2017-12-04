@@ -3,8 +3,8 @@ package com.danyun.hades.restserver;
 import com.danyun.hades.common.model.redis.UfoCatcher;
 import com.danyun.hades.connection.container.RestConnectionMap;
 import com.danyun.hades.constant.ConstantString;
-import com.danyun.hades.redis.dao.UfoCatcherDao;
 import com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl;
+import com.danyun.hades.util.SpringContainer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -14,9 +14,6 @@ import io.netty.handler.codec.http.*;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -33,14 +30,11 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
         ctx.flush();
     }
 
-    @Autowired
-    private UfoCatcherDao ufoCatcherDao;
-
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
 
-        ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
-        UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) context.getBean("userDao");
+        //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
+        UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
 
         StringBuilder toCatcherSockMessage = new StringBuilder();
 
