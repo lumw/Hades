@@ -3,9 +3,15 @@ package com.danyun.hades.constant;
 
 public class ConstantString {
 
-    public static String Catcher_Status_Free = "0";
 
-    public static String Catcher_Status_Using = "1";
+
+    public static int Catcher_Status_Free = 0;
+
+    public static int Catcher_Status_Using = 1;
+
+    public static int Catcher_Online = 1;   //娃娃机在线
+
+    public static int Catcher_Offline = 0;  //娃娃机离线
 
     public static String Catcher_Operation_PalyGame = "0001";
 

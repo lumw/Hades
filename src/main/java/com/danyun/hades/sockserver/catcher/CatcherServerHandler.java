@@ -8,6 +8,7 @@ import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.UfoCatcherDao;
 import com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl;
 import com.danyun.hades.restserver.RestServerOutBoundHandler;
+import com.danyun.hades.util.DateUtil;
 import com.danyun.hades.util.SpringContainer;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -60,9 +61,17 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             }
             SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
 
-            System.out.println("娃娃机[" + catcherId + "]从" + ctx.channel().remoteAddress() + " 注册进入系统");
+            System.out.println("娃娃机[" + catcherId + "]从 " + ctx.channel().remoteAddress() + " 注册进入系统");
 
-            ufoCatcherDao.catcherRegist(new UfoCatcher(catcherId, ConstantString.Catcher_Status_Free));
+            //将娃娃机注册到Redis中
+            UfoCatcher ufoCatcher = new UfoCatcher();
+            ufoCatcher.setUFOCatcherId(catcherId);
+            ufoCatcher.setOnlineStatus(ConstantString.Catcher_Online);
+            ufoCatcher.setGameState(ConstantString.Catcher_Status_Free);
+            String currenDtTm = DateUtil.getCurrentDtTm();
+            ufoCatcher.setLoginTmDt(currenDtTm);
+            ufoCatcher.setLastUpdateTmDt(currenDtTm);
+            ufoCatcherDao.catcherRegist(ufoCatcher);
 
             rspStrToCatcher = catcherId + actionCode + "0000" + "\n";
             System.out.println("应答娃娃机登录信息" + rspStrToCatcher);
@@ -82,13 +91,17 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             System.out.println("应答游戏结果通知" + rspStrToCatcher);
 
             //解锁娃娃机，设置状态为空闲
-            ufoCatcherDao.catcherRegist(new UfoCatcher(catcherId, ConstantString.Catcher_Status_Free));
+            UfoCatcher ufoCatcher = ufoCatcherDao.get(catcherId);
+            ufoCatcher.setGameState(ConstantString.Catcher_Status_Free);
+            String currentDtTm = DateUtil.getCurrentDtTm();
+            ufoCatcher.setLastUpdateTmDt(currentDtTm);
+            ufoCatcherDao.catcherRegist(ufoCatcher);
 
             ctx.writeAndFlush(rspStrToCatcher);
 
         }else if ( "0001".equals(actionCode) ){
 
-                System.out.println("收到娃娃机响应信息: " + msgfromCatcher);
+            System.out.println("收到娃娃机响应信息: " + msgfromCatcher);
 
             String recordId = msgfromCatcher.substring(8, 16);
             String resultCode = msgfromCatcher.substring(16, 20);

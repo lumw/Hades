@@ -4,6 +4,7 @@ import com.danyun.hades.common.model.redis.UfoCatcher;
 import com.danyun.hades.connection.container.RestConnectionMap;
 import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl;
+import com.danyun.hades.util.DateUtil;
 import com.danyun.hades.util.SpringContainer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -68,9 +69,15 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
 
                     String actionCode = requestJson.getString("actionCode");
                     if(ConstantString.Catcher_Operation_PalyGame.equals(actionCode)){
-                        ufoCatcherDao.update(new UfoCatcher(catcherId, ConstantString.Catcher_Status_Using));
+
+                        UfoCatcher ufoCatcher = ufoCatcherDao.get(catcherId);
+                        ufoCatcher.setGameState(ConstantString.Catcher_Status_Using);
+                        ufoCatcher.setLastUpdateTmDt(DateUtil.getCurrentDtTm());
+                        ufoCatcherDao.update(ufoCatcher);
+
                         String recordId = requestJson.getString("recordId");
                         toCatcherSockMessage.append(catcherId).append(actionCode).append(recordId);
+
                     }else{
                         toCatcherSockMessage.append(catcherId).append(actionCode);
                     }

@@ -9,7 +9,7 @@ public interface UfoCatcherDao {
 
     void delete(String key);
 
-    void update(UfoCatcher user);
+    void update(UfoCatcher ufoCatcher);
 
-    String get(String catcherId);
+    UfoCatcher get(String catcherId);
 }

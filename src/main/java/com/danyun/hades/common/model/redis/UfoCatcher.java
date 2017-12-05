@@ -7,17 +7,20 @@ public class UfoCatcher implements Serializable{
 
     private static final long serialVersionUID = -6011241820070393952L;
 
+    //娃娃机Id
     private String UFOCatcherId;
 
-    private String ufoCatcherStatus;
+    //在线状态
+    private int onlineStatus;
 
-    private String lastUpdateTime;
+    //是否空闲
+    private int gameState;
 
-    public UfoCatcher(String UFOCatcherId, String ufoCatcherStatus){
-        this.UFOCatcherId = UFOCatcherId;
-        this.ufoCatcherStatus = ufoCatcherStatus;
-    }
+    //上线时间
+    private String loginTmDt;
 
+    //最后一次操作时间
+    private String lastUpdateTmDt;
 
     public String getUFOCatcherId() {
         return UFOCatcherId;
@@ -27,19 +30,35 @@ public class UfoCatcher implements Serializable{
         this.UFOCatcherId = UFOCatcherId;
     }
 
-    public String getUfoCatcherStatus() {
-        return ufoCatcherStatus;
+    public int getOnlineStatus() {
+        return onlineStatus;
     }
 
-    public void setUfoCatcherStatus(String ufoCatcherStatus) {
-        this.ufoCatcherStatus = ufoCatcherStatus;
+    public void setOnlineStatus(int onlineStatus) {
+        this.onlineStatus = onlineStatus;
     }
 
-    public String getLastUpdateTime() {
-        return lastUpdateTime;
+    public int getGameState() {
+        return gameState;
     }
 
-    public void setLastUpdateTime(String lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime;
+    public void setGameState(int gameState) {
+        this.gameState = gameState;
+    }
+
+    public String getLoginTmDt() {
+        return loginTmDt;
+    }
+
+    public void setLoginTmDt(String loginTmDt) {
+        this.loginTmDt = loginTmDt;
+    }
+
+    public String getLastUpdateTmDt() {
+        return lastUpdateTmDt;
+    }
+
+    public void setLastUpdateTmDt(String lastUpdateTmDt) {
+        this.lastUpdateTmDt = lastUpdateTmDt;
     }
 }

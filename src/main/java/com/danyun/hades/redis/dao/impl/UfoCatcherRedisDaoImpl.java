@@ -18,7 +18,7 @@ public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
         //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
         //redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
         redisTemplate = (RedisTemplate<String, Object>) SpringContainer.getInstance().getBean("redisTemplate");
-        redisTemplate.opsForHash().put(ConstantString.Reids_Key_CatcherStatus, ufoCatcher.getUFOCatcherId(), ufoCatcher.getUfoCatcherStatus());
+        redisTemplate.opsForHash().put(ConstantString.Reids_Key_CatcherStatus, ufoCatcher.getUFOCatcherId(), ufoCatcher);
     }
 
     public void delete(String catcherId) {
@@ -37,15 +37,15 @@ public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
             throw new NullPointerException("数据行不存在, key = " + key);
         }
 
-        redisTemplate.opsForHash().put(ConstantString.Reids_Key_CatcherStatus, ufoCatcher.getUFOCatcherId(), ufoCatcher.getUfoCatcherStatus());
+        redisTemplate.opsForHash().put(ConstantString.Reids_Key_CatcherStatus, ufoCatcher.getUFOCatcherId(), ufoCatcher);
     }
 
-    public String get(final String catcherId) {
+    public UfoCatcher get(final String catcherId) {
 
         //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
         //redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
 
         redisTemplate = (RedisTemplate<String, Object>) SpringContainer.getInstance().getBean("redisTemplate");
-        return (String) redisTemplate.opsForHash().get(ConstantString.Reids_Key_CatcherStatus, catcherId);
+        return (UfoCatcher) redisTemplate.opsForHash().get(ConstantString.Reids_Key_CatcherStatus, catcherId);
     }
 }
