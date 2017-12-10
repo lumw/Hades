@@ -29,20 +29,25 @@
 
     <bean id="userDao" class="com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl"/>
 
-    <bean id="catcherServerHandler" class="com.danyun.hades.sockserver.catcher.CatcherServerHandler">
+    <bean id="catcherService" class="com.danyun.hades.sockserve.service.impl.CatcherServiceImpl">
+        <property name="restTemplate" ref="restTemplate"/>
+    </bean>
+
+    <bean id="catcherServerHandler" class="com.danyun.hades.sockserve.CatcherServerHandler">
         <property name="ufoCatcherDao" ref="userDao"/>
+        <property name="catcherService" ref="catcherService"/>
     </bean>
 
 
     <!-- Http client Factory -->
-    <!-- <bean id="httpClientFactory"
+    <bean id="httpClientFactory"
           class="org.springframework.http.client.SimpleClientHttpRequestFactory">
         <property name="connectTimeout" value="5000"/>
         <property name="readTimeout" value="5000"/>
-    </bean> -->
+    </bean>
 
     <!-- RestTemplate -->
-    <!--<bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
+    <bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
         <constructor-arg ref="httpClientFactory"/>
-    </bean>-->
+    </bean>
 </beans>

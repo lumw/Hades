@@ -1,4 +1,4 @@
-package com.danyun.hades.sockserver.catcher;
+package com.danyun.hades.sockserve;
 
 
 import com.danyun.hades.common.model.redis.UfoCatcher;
@@ -8,6 +8,7 @@ import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.UfoCatcherDao;
 import com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl;
 import com.danyun.hades.restserver.RestServerOutBoundHandler;
+import com.danyun.hades.sockserve.service.CatcherService;
 import com.danyun.hades.util.DateUtil;
 import com.danyun.hades.util.SpringContainer;
 import io.netty.buffer.Unpooled;
@@ -34,6 +35,8 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
     @Autowired
     private UfoCatcherDao ufoCatcherDao;
+
+    private CatcherService catcherService;
 
     private static Logger logger = LogManager.getLogger(CatcherServerHandler.class);
 
@@ -96,6 +99,15 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             String currentDtTm = DateUtil.getCurrentDtTm();
             ufoCatcher.setLastUpdateTmDt(currentDtTm);
             ufoCatcherDao.catcherRegist(ufoCatcher);
+
+            //发送游戏结果到服务器
+            catcherService = (CatcherService) SpringContainer.getInstance().getBean("catcherService");
+            boolean result = catcherService.notifyResult(operationId, catcherId, Integer.parseInt(gameResult));
+            System.out.println("游戏结果通知结果 ： " + result);
+            //失败处理
+            if(!result){
+                logger.error("发送游戏结果通知失败");
+            }
 
             ctx.writeAndFlush(rspStrToCatcher);
 
@@ -174,5 +186,9 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
     public void setUfoCatcherDao(UfoCatcherDao ufoCatcherDao) {
         this.ufoCatcherDao = ufoCatcherDao;
+    }
+
+    public void setCatcherService(CatcherService catcherService) {
+        this.catcherService = catcherService;
     }
 }

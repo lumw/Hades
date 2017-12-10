@@ -1,4 +1,4 @@
-package com.danyun.hades.sockserver.catcher;
+package com.danyun.hades.sockserve;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;

@@ -2,7 +2,7 @@ package com.danyun.hades;
 
 
 import com.danyun.hades.restserver.RestServerThread;
-import com.danyun.hades.sockserver.catcher.CatcherServerThread;
+import com.danyun.hades.sockserve.CatcherServerThread;
 import io.netty.channel.unix.Socket;
 
 import java.util.HashMap;
