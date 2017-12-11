@@ -43,9 +43,6 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msgfromCatcher) throws Exception {
 
-        //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
-        //UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) context.getBean("userDao");
-
         UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl)SpringContainer.getInstance().getBean("userDao");
 
         System.out.println("接收到来自 " + ctx.channel().remoteAddress() + " 的指令 : " + msgfromCatcher);
@@ -87,11 +84,9 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
         }else if("0101".equals(actionCode)){
 
-            String operationId = msgfromCatcher.substring(8, 12);
-            String gameResult = msgfromCatcher.substring(12, 13);
-            System.out.println("游戏结果" + gameResult);
-            rspStrToCatcher = catcherId + actionCode + operationId + "0000" + "\n";
-            System.out.println("应答游戏结果通知" + rspStrToCatcher);
+            String operationId = msgfromCatcher.substring(8, 16);
+            String gameResult = msgfromCatcher.substring(16, 17);
+            System.out.println("operationId : " + operationId + ", 游戏结果: " + gameResult);
 
             //解锁娃娃机，设置状态为空闲
             UfoCatcher ufoCatcher = ufoCatcherDao.get(catcherId);
@@ -108,7 +103,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             if(!result){
                 logger.error("发送游戏结果通知失败");
             }
-
+            rspStrToCatcher = catcherId + actionCode + operationId + "0000" + "\n";
             ctx.writeAndFlush(rspStrToCatcher);
 
         }else if ( "0001".equals(actionCode) ){

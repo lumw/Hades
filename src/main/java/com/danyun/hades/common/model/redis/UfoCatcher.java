@@ -22,6 +22,9 @@ public class UfoCatcher implements Serializable{
     //最后一次操作时间
     private String lastUpdateTmDt;
 
+    //当前登录娃娃机的用户的 userId
+    private int userId;
+
     public String getUFOCatcherId() {
         return UFOCatcherId;
     }
@@ -60,5 +63,13 @@ public class UfoCatcher implements Serializable{
 
     public void setLastUpdateTmDt(String lastUpdateTmDt) {
         this.lastUpdateTmDt = lastUpdateTmDt;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 }
