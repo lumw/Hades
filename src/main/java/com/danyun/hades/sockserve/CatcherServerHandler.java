@@ -175,7 +175,14 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception{
 
-        System.out.println("连接已经失效.........");
+
+        String ufoCatcherId = SocketConnectionMap.getInstance().removeByValue(ctx.channel());
+        System.out.println("与娃娃机" + ufoCatcherId + "的连接已经失效,删除对应的Channel");
+
+        UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
+        ufoCatcherDao.delete(ufoCatcherId);
+        System.out.println("与娃娃机" + ufoCatcherId + "的连接已经失效,删除Redis中的记录");
+
         super.channelInactive(ctx);
     }
 

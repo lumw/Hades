@@ -3,6 +3,7 @@ package com.danyun.hades.connection.container;
 
 import io.netty.channel.Channel;
 
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SocketConnectionMap {
@@ -31,7 +32,23 @@ public class SocketConnectionMap {
     }
 
     public boolean contains(String catcherId){
+
         return catcherSocketList.containsKey(catcherId);
+    }
+
+    public String removeByValue(Channel channel){
+
+        String catcherId = "";
+        Iterator iterator = catcherSocketList.entrySet().iterator();
+        while (iterator.hasNext()){
+            ConcurrentHashMap.Entry entry = (ConcurrentHashMap.Entry) iterator.next();
+            catcherId = entry.getKey().toString();
+            Channel value = (Channel) entry.getValue();
+            if (value == channel){
+                catcherSocketList.remove(catcherId);
+            }
+        }
+        return catcherId;
     }
 
     public ConcurrentHashMap<String, Channel> getMap() {
