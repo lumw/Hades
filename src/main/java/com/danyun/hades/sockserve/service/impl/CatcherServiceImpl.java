@@ -25,7 +25,7 @@ public class CatcherServiceImpl implements CatcherService{
         jsonObject.put("ufoCatcherId", ufoCatcherId);
         jsonObject.put("gameResult", gameResult);
 
-        System.out.println("游戏结果通知:" + jsonObject.toString());
+        System.out.println("反馈游戏结果给服务器, 请求数据:" + jsonObject.toString());
         LinkedHashMap<String, String> jsonObjectResult = (LinkedHashMap<String, String>) invokeRemoteRestService(jsonObject);
 
         String errorCode = jsonObjectResult.get("errorCode");

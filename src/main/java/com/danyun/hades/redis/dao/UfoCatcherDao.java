@@ -1,15 +1,15 @@
 package com.danyun.hades.redis.dao;
 
 
-import com.danyun.hades.common.model.redis.UfoCatcher;
+import com.danyun.hades.common.model.redis.UfoCatcherRedis;
 
 public interface UfoCatcherDao {
 
-    void catcherRegist(UfoCatcher catcher);
+    void catcherRegist(UfoCatcherRedis catcher);
 
     void delete(String key);
 
-    void update(UfoCatcher ufoCatcher);
+    void update(UfoCatcherRedis ufoCatcher);
 
-    UfoCatcher get(String catcherId);
+    UfoCatcherRedis get(String catcherId);
 }

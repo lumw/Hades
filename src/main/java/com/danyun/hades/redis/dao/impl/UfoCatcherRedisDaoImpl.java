@@ -1,7 +1,7 @@
 package com.danyun.hades.redis.dao.impl;
 
 
-import com.danyun.hades.common.model.redis.UfoCatcher;
+import com.danyun.hades.common.model.redis.UfoCatcherRedis;
 import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.UfoCatcherDao;
 import com.danyun.hades.util.SpringContainer;
@@ -13,7 +13,7 @@ public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    public void catcherRegist(final UfoCatcher ufoCatcher) {
+    public void catcherRegist(final UfoCatcherRedis ufoCatcher) {
 
         redisTemplate = (RedisTemplate<String, Object>) SpringContainer.getInstance().getBean("redisTemplate");
         redisTemplate.opsForHash().put(ConstantString.Reids_Key_CatcherStatus, ufoCatcher.getUFOCatcherId(), ufoCatcher);
@@ -25,7 +25,7 @@ public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
         redisTemplate.opsForHash().delete(ConstantString.Reids_Key_CatcherStatus, catcherId);
     }
 
-    public void update(final UfoCatcher ufoCatcher) {
+    public void update(final UfoCatcherRedis ufoCatcher) {
 
         String key = ufoCatcher.getUFOCatcherId();
 
@@ -36,12 +36,9 @@ public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
         redisTemplate.opsForHash().put(ConstantString.Reids_Key_CatcherStatus, ufoCatcher.getUFOCatcherId(), ufoCatcher);
     }
 
-    public UfoCatcher get(final String catcherId) {
-
-        //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
-        //redisTemplate = (RedisTemplate<String, Object>) context.getBean("redisTemplate");
+    public UfoCatcherRedis get(final String catcherId) {
 
         redisTemplate = (RedisTemplate<String, Object>) SpringContainer.getInstance().getBean("redisTemplate");
-        return (UfoCatcher) redisTemplate.opsForHash().get(ConstantString.Reids_Key_CatcherStatus, catcherId);
+        return (UfoCatcherRedis) redisTemplate.opsForHash().get(ConstantString.Reids_Key_CatcherStatus, catcherId);
     }
 }

@@ -1,7 +1,7 @@
 package com.danyun.hades.sockserve;
 
 
-import com.danyun.hades.common.model.redis.UfoCatcher;
+import com.danyun.hades.common.model.redis.UfoCatcherRedis;
 import com.danyun.hades.connection.container.RestConnectionMap;
 import com.danyun.hades.connection.container.SocketConnectionMap;
 import com.danyun.hades.constant.ConstantString;
@@ -45,14 +45,15 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
         UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl)SpringContainer.getInstance().getBean("userDao");
 
-        System.out.println("接收到来自 " + ctx.channel().remoteAddress() + " 的指令 : " + msgfromCatcher);
+        logger.info("接收到来自 " + ctx.channel().remoteAddress() + " 的指令 : " + msgfromCatcher);
 
         String catcherId = msgfromCatcher.substring(0, 4);
         String actionCode = msgfromCatcher.substring(4, 8);
 
-        System.out.println("catcherId = " + catcherId + ", actionCode = " + actionCode);
+        logger.info("catcherId = " + catcherId + ", actionCode = " + actionCode);
         String rspStrToCatcher;
 
+        //娃娃机注册
         if("0100".equals(actionCode)){
 
             //将娃娃机与服务器链接注册进内存中
@@ -61,55 +62,64 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             }
             SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
 
-            System.out.println("娃娃机[" + catcherId + "]从 " + ctx.channel().remoteAddress() + " 注册进入系统");
+            logger.info("娃娃机[" + catcherId + "]从 " + ctx.channel().remoteAddress() + " 注册进入系统");
 
             //将娃娃机注册到Redis中
-            UfoCatcher ufoCatcher = new UfoCatcher();
-            ufoCatcher.setUFOCatcherId(catcherId);
-            ufoCatcher.setOnlineStatus(ConstantString.Catcher_Online);
-            ufoCatcher.setGameState(ConstantString.Catcher_Status_Free);
-            String currenDtTm = DateUtil.getCurrentDtTm();
-            ufoCatcher.setLoginTmDt(currenDtTm);
-            ufoCatcher.setLastUpdateTmDt(currenDtTm);
-            ufoCatcherDao.catcherRegist(ufoCatcher);
+            UfoCatcherRedis ufoCatcherRedis = new UfoCatcherRedis();
+            ufoCatcherRedis.setUFOCatcherId(catcherId);
+            ufoCatcherRedis.setOnlineStatus(ConstantString.Catcher_Online);
+            ufoCatcherRedis.setGameStatus(ConstantString.Catcher_Status_Free);
+            ufoCatcherRedis.setLoginTmDt(DateUtil.getCurrentTimeMillis());
+            ufoCatcherRedis.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
+            ufoCatcherDao.catcherRegist(ufoCatcherRedis);
 
+            logger.info("已将娃娃机[" + catcherId + "]注册进入Redis中");
             rspStrToCatcher = catcherId + actionCode + "0000" + "\n";
-            System.out.println("应答娃娃机登录信息" + rspStrToCatcher);
+            logger.info("应答娃娃机登录信息" + rspStrToCatcher);
             ctx.writeAndFlush(rspStrToCatcher);
-
-        }else if("9999".equals(actionCode)){
+        }
+        //心跳
+        else if("9999".equals(actionCode)){
             rspStrToCatcher = catcherId + actionCode + "\n";
-            System.out.println("应答心跳信息" + rspStrToCatcher);
-            ctx.writeAndFlush(rspStrToCatcher);
+            logger.info("应答心跳信息" + rspStrToCatcher);
 
-        }else if("0101".equals(actionCode)){
+            //将娃娃机与服务器链接注册进内存中
+            if (!SocketConnectionMap.getInstance().contains(catcherId)) {
+                SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
+            }
+            ctx.writeAndFlush(rspStrToCatcher);
+        }
+        //结果通知
+        else if("0101".equals(actionCode)){
 
             String operationId = msgfromCatcher.substring(8, 16);
             String gameResult = msgfromCatcher.substring(16, 17);
             System.out.println("operationId : " + operationId + ", 游戏结果: " + gameResult);
 
-            //解锁娃娃机，设置状态为空闲
-            UfoCatcher ufoCatcher = ufoCatcherDao.get(catcherId);
-            ufoCatcher.setGameState(ConstantString.Catcher_Status_Free);
-            String currentDtTm = DateUtil.getCurrentDtTm();
-            ufoCatcher.setLastUpdateTmDt(currentDtTm);
+            //解锁娃娃机，设置状态设置为玩家临时占用
+            UfoCatcherRedis ufoCatcher = ufoCatcherDao.get(catcherId);
+            ufoCatcher.setGameStatus(ConstantString.Catcher_Status_Own);
+            ufoCatcher.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
             ufoCatcherDao.catcherRegist(ufoCatcher);
+            logger.info("改变娃娃机状态成功,当前娃娃机状态:" + ConstantString.Catcher_Status_Own);
 
             //发送游戏结果到服务器
             catcherService = (CatcherService) SpringContainer.getInstance().getBean("catcherService");
             boolean result = catcherService.notifyResult(operationId, catcherId, Integer.parseInt(gameResult));
-            System.out.println("游戏结果通知结果 ： " + result);
             //失败处理
             if(!result){
-                logger.error("发送游戏结果通知失败");
+                logger.error("反馈游戏结果失败");
+                rspStrToCatcher = catcherId + actionCode + operationId + "9999" + "\n";
+            }else {
+                logger.info("反馈游戏结果成功");
+                rspStrToCatcher = catcherId + actionCode + operationId + "0000" + "\n";
             }
-            rspStrToCatcher = catcherId + actionCode + operationId + "0000" + "\n";
+
             ctx.writeAndFlush(rspStrToCatcher);
-
-        }else if ( "0001".equals(actionCode) ){
-
-            System.out.println("收到娃娃机响应信息: " + msgfromCatcher);
-
+        }
+        //上机操作应答
+        else if ( "0001".equals(actionCode) ){
+            logger.info("收到上机响应信息: " + msgfromCatcher);
             String recordId = msgfromCatcher.substring(8, 16);
             String resultCode = msgfromCatcher.substring(16, 20);
 
@@ -117,30 +127,33 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             rspJson.put("recordId", recordId);
             rspJson.put("resultCode", resultCode);
 
+            //上机成功，更新redis中娃娃机信息
+            if ("0000".equals(resultCode)){
+                UfoCatcherRedis ufoCatcherRedis = ufoCatcherDao.get(catcherId);
+                ufoCatcherRedis.setGameStatus(ConstantString.Catcher_Status_Using);
+                ufoCatcherRedis.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
+                ufoCatcherDao.update(ufoCatcherRedis);
+            }
+
             RestConnectionMap.getInstance().getMap().get(catcherId).pipeline().remove(RestServerOutBoundHandler.class);
-
-
             byte[] jsonByteByte = rspJson.toString().getBytes();
             FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(jsonByteByte));
             response.headers().set(CONTENT_TYPE, "application/json");
             response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
             response.headers().set(CONNECTION, KEEP_ALIVE);
 
-
             Channel channel = RestConnectionMap.getInstance().getMap().get(catcherId);
             channel.writeAndFlush(response);
             channel.close();
             RestConnectionMap.getInstance().remove(catcherId);
-
         } else { //其他应答指令
 
-            System.out.println("收到操作应答指令: " + msgfromCatcher);
+            logger.info("收到操作应答指令: " + msgfromCatcher);
 
             String resultCode = msgfromCatcher.substring(8, 12);
             JSONObject rspJson = new JSONObject();
             rspJson.put("resultCode", resultCode);
 
-
             RestConnectionMap.getInstance().getMap().get(catcherId).pipeline().remove(RestServerOutBoundHandler.class);
             byte[] jsonByteByte = rspJson.toString().getBytes();
             FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(jsonByteByte));
@@ -152,7 +165,6 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             channel.writeAndFlush(response);
             channel.close();
             RestConnectionMap.getInstance().remove(catcherId);
-
         }
     }
 
@@ -165,7 +177,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
 
-        System.out.println("RamoteAddress : " + ctx.channel().remoteAddress() + " active !");
+        logger.info("RamoteAddress : " + ctx.channel().remoteAddress() + " active !");
 
         //ctx.writeAndFlush("Welcome to " + InetAddress.getLocalHost().getHostName() + " service!\n");
 
@@ -175,13 +187,12 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception{
 
-
         String ufoCatcherId = SocketConnectionMap.getInstance().removeByValue(ctx.channel());
-        System.out.println("与娃娃机" + ufoCatcherId + "的连接已经失效,删除对应的Channel");
+        logger.error("与娃娃机" + ufoCatcherId + "的连接已经失效,删除对应的Channel");
 
         UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
         ufoCatcherDao.delete(ufoCatcherId);
-        System.out.println("与娃娃机" + ufoCatcherId + "的连接已经失效,删除Redis中的记录");
+        logger.error("与娃娃机" + ufoCatcherId + "的连接已经失效,删除Redis中的记录");
 
         super.channelInactive(ctx);
     }

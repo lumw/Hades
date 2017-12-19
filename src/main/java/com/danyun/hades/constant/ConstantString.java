@@ -4,14 +4,18 @@ package com.danyun.hades.constant;
 public class ConstantString {
 
 
+    /*娃娃机相关*/
+    public static int Catcher_Status_Free = 0;  // 娃娃机空闲并且没有被玩家临时占用
 
-    public static int Catcher_Status_Free = 0;
+    public static int Catcher_Status_Using = 1; // 有玩家在操作娃娃机
 
-    public static int Catcher_Status_Using = 1;
+    public static int Catcher_Status_Own = 2;   // 玩家临时拥有娃娃机，但是没有进行游戏
 
-    public static int Catcher_Online = 1;   //娃娃机在线
+    public static int Catcher_Online = 1;
 
-    public static int Catcher_Offline = 0;  //娃娃机离线
+    public static int Catcher_Offline = 0;
+
+
 
     public static String Catcher_Operation_PalyGame = "0001";
 

@@ -1,10 +1,8 @@
 package com.danyun.hades.restserver;
 
-import com.danyun.hades.common.model.redis.UfoCatcher;
 import com.danyun.hades.connection.container.RestConnectionMap;
 import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.impl.UfoCatcherRedisDaoImpl;
-import com.danyun.hades.util.DateUtil;
 import com.danyun.hades.util.SpringContainer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -14,6 +12,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.*;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -26,6 +26,8 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
     private static final AsciiString CONNECTION = new AsciiString("Connection");
     private static final AsciiString KEEP_ALIVE = new AsciiString("keep-alive");
 
+    private static Logger logger = LogManager.getLogger(RestServerInBoundHandler.class);
+
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
@@ -34,11 +36,8 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
 
-        //ApplicationContext context = new ClassPathXmlApplicationContext("classpath:hades-beans.xml");
         UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
-
         StringBuilder toCatcherSockMessage = new StringBuilder();
-
         String catcherId;
 
         if (msg instanceof FullHttpRequest) {
@@ -62,44 +61,23 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
 
             //根据不同的请求API做不同的处理(路由分发)，只处理POST方法
             if (req.method() == HttpMethod.POST) {
-
                 if (uri.equals("/operation")) {
-
-                    System.out.println("收到操作娃娃机指令json : " + requestJson.toString());
-
+                    logger.info("收到操作娃娃机指令json : " + requestJson.toString());
                     String actionCode = requestJson.getString("actionCode");
                     if(ConstantString.Catcher_Operation_PalyGame.equals(actionCode)){
-
-                        UfoCatcher ufoCatcher = ufoCatcherDao.get(catcherId);
-                        ufoCatcher.setGameState(ConstantString.Catcher_Status_Using);
-                        ufoCatcher.setLastUpdateTmDt(DateUtil.getCurrentDtTm());
-                        ufoCatcherDao.update(ufoCatcher);
-
                         String recordId = requestJson.getString("recordId");
                         toCatcherSockMessage.append(catcherId).append(actionCode).append(recordId);
-
                     }else{
                         toCatcherSockMessage.append(catcherId).append(actionCode);
                     }
-
                 } else if (req.uri().equals("/checkstatus")) {
-
-                    //String catcherId = requestJson.getString("catcherId");
                     String actionCode = requestJson.getString("actionCode");
-
-                    System.out.println("娃娃机编号:" + catcherId + ", 操作代码: " + actionCode);
-
+                    logger.info("娃娃机编号:" + catcherId + ", 操作代码: " + actionCode);
                     toCatcherSockMessage.append(catcherId).append(actionCode);
-
                 } else if (req.uri().equals("/heartbreak")){
-
-                    //String catcherId = requestJson.getString("catcherId");
                     String actionCode = requestJson.getString("actionCode");
-
-                    System.out.println("娃娃机编号:" + catcherId + ", 操作代码: " + actionCode);
-
+                    logger.info("娃娃机编号:" + catcherId + ", 操作代码: " + actionCode);
                     toCatcherSockMessage.append(catcherId).append(actionCode);
-
                 } else {
                     //错误处理
                     responseJson.put("error", "404 Not Find");
@@ -109,7 +87,6 @@ public class RestServerInBoundHandler extends ChannelInboundHandlerAdapter {
                 //错误处理
                 responseJson.put("error", "404 Not Find");
             }
-
             //将数据发送到UFOCatcher
             ctx.write(toCatcherSockMessage.toString() + "\n");
         }
