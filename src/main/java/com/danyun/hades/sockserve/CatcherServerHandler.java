@@ -13,6 +13,7 @@ import com.danyun.hades.util.DateUtil;
 import com.danyun.hades.util.SpringContainer;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -83,11 +84,17 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             rspStrToCatcher = catcherId + actionCode + "\n";
             logger.info("应答心跳信息" + rspStrToCatcher);
 
+            //判断链接是否有效
+            Channel currChannel = SocketConnectionMap.getInstance().getMap().get(catcherId);
+            if (!currChannel.isActive()){
+                logger.error("链接已经无效了------");
+            }
             //将娃娃机与服务器链接注册进内存中
             if (!SocketConnectionMap.getInstance().contains(catcherId)) {
                 SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
             }
-            ctx.writeAndFlush(rspStrToCatcher);
+            ChannelFuture channelFuture = ctx.writeAndFlush(rspStrToCatcher);
+            channelFuture.
         }
         //结果通知
         else if("0101".equals(actionCode)){
@@ -100,6 +107,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             UfoCatcherRedis ufoCatcher = ufoCatcherDao.get(catcherId);
             ufoCatcher.setGameStatus(ConstantString.Catcher_Status_Own);
             ufoCatcher.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
+            ufoCatcher.setLastGameEndDtTm(DateUtil.getCurrentTimeMillis());
             ufoCatcherDao.catcherRegist(ufoCatcher);
             logger.info("改变娃娃机状态成功,当前娃娃机状态:" + ConstantString.Catcher_Status_Own);
 
