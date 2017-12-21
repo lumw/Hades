@@ -2,6 +2,7 @@ package com.danyun.hades.restserver;
 
 
 import com.danyun.hades.connection.container.SocketConnectionMap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
@@ -19,6 +20,25 @@ public class RestServerOutBoundHandler extends ChannelOutboundHandlerAdapter {
         String catcherId = msg.toString().substring(0, 4);
         if(!SocketConnectionMap.getInstance().contains(catcherId)){
             logger.error("与娃娃机[" + catcherId + "]的链接不存在");
+            return;
+        }
+
+        //判断链接是否有效
+        Channel currChannel = SocketConnectionMap.getInstance().getMap().get(catcherId);
+        if (!currChannel.isActive()) {
+            logger.error("isActive, 准备发送请求，但是发现链接已经无效了------");
+            return;
+        }
+        if (!currChannel.isWritable()) {
+            logger.error("isWritable, 准备发送请求，但是发现链接已经无效了------");
+            return;
+        }
+        if (!currChannel.isOpen()) {
+            logger.error("isOpen, 准备发送请求，但是发现链接已经无效了------");
+            return;
+        }
+        if (!currChannel.isRegistered()) {
+            logger.error("isRegistered, 准备发送请求，但是发现链接已经无效了------");
             return;
         }
 

@@ -44,6 +44,7 @@ public class SocketConnectionMap {
             ConcurrentHashMap.Entry entry = (ConcurrentHashMap.Entry) iterator.next();
             catcherId = entry.getKey().toString();
             Channel value = (Channel) entry.getValue();
+            System.out.println("catcherId:" + catcherId + "channel ：" + channel);
             if (value == channel){
                 catcherSocketList.remove(catcherId);
             }

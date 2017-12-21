@@ -59,7 +59,9 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
             //将娃娃机与服务器链接注册进内存中
             if(SocketConnectionMap.getInstance().contains(catcherId)){
+
                 SocketConnectionMap.getInstance().remove(catcherId);
+                logger.info("娃娃机与服务器连接已经存在于队列中，删除失效连接，替换为新连接");
             }
             SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
 
@@ -81,20 +83,17 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
         }
         //心跳
         else if("9999".equals(actionCode)){
-            rspStrToCatcher = catcherId + actionCode + "\n";
-            logger.info("应答心跳信息" + rspStrToCatcher);
 
-            //判断链接是否有效
-            Channel currChannel = SocketConnectionMap.getInstance().getMap().get(catcherId);
-            if (!currChannel.isActive()){
-                logger.error("链接已经无效了------");
-            }
-            //将娃娃机与服务器链接注册进内存中
+            rspStrToCatcher = catcherId + actionCode + "\n";
+
+            //将娃娃机与服务器链接注册进内存中(加这段代码是因为娃娃机的重连机制:娃娃机如果连续三次没有收到
+            // 心跳包的应答的话，则会触发重连，但是如果在三次以内重新连上服务器后会继续发心跳，不会重新发上线请求)
             if (!SocketConnectionMap.getInstance().contains(catcherId)) {
                 SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
+                logger.info("重新将连接写入连接管理器中, 娃娃机编号" + catcherId);
             }
             ChannelFuture channelFuture = ctx.writeAndFlush(rspStrToCatcher);
-            channelFuture.
+            logger.info("应答心跳信息" + rspStrToCatcher);
         }
         //结果通知
         else if("0101".equals(actionCode)){
@@ -186,9 +185,6 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
 
         logger.info("RamoteAddress : " + ctx.channel().remoteAddress() + " active !");
-
-        //ctx.writeAndFlush("Welcome to " + InetAddress.getLocalHost().getHostName() + " service!\n");
-
         super.channelActive(ctx);
     }
 
@@ -196,15 +192,28 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception{
 
         String ufoCatcherId = SocketConnectionMap.getInstance().removeByValue(ctx.channel());
-        logger.error("与娃娃机" + ufoCatcherId + "的连接已经失效,删除对应的Channel");
+        logger.error("channelInactive + 与娃娃机" + ufoCatcherId + "的连接已经失效,删除对应的Channel");
 
         UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
         ufoCatcherDao.delete(ufoCatcherId);
-        logger.error("与娃娃机" + ufoCatcherId + "的连接已经失效,删除Redis中的记录");
+        logger.error("channelInactive + 与娃娃机" + ufoCatcherId + "的连接已经失效,删除Redis中的记录");
 
         super.channelInactive(ctx);
     }
 
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+
+        logger.error("exceptionCaught...." + cause.getMessage());
+        //String ufoCatcherId = SocketConnectionMap.getInstance().removeByValue(ctx.channel());
+        //logger.error("与娃娃机" + ufoCatcherId + "的连接已经失效,删除对应的Channel");
+
+        //UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
+        //ufoCatcherDao.delete(ufoCatcherId);
+        //logger.error("与娃娃机" + ufoCatcherId + "的连接已经失效,删除Redis中的记录");
+
+        ctx.fireExceptionCaught(cause);
+    }
     public void setUfoCatcherDao(UfoCatcherDao ufoCatcherDao) {
         this.ufoCatcherDao = ufoCatcherDao;
     }
