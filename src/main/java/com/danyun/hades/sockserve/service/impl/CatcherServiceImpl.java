@@ -2,6 +2,8 @@ package com.danyun.hades.sockserve.service.impl;
 
 
 import com.danyun.hades.sockserve.service.CatcherService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -12,7 +14,7 @@ import java.util.LinkedHashMap;
 
 public class CatcherServiceImpl implements CatcherService{
 
-
+    private static Logger logger = LogManager.getLogger(CatcherServiceImpl.class);
     private RestTemplate restTemplate;
 
     /**
@@ -25,11 +27,9 @@ public class CatcherServiceImpl implements CatcherService{
         jsonObject.put("ufoCatcherId", ufoCatcherId);
         jsonObject.put("gameResult", gameResult);
 
-        System.out.println("反馈游戏结果给服务器, 请求数据:" + jsonObject.toString());
+        logger.info("反馈游戏结果给服务器, 请求数据:" + jsonObject.toString());
         LinkedHashMap<String, String> jsonObjectResult = (LinkedHashMap<String, String>) invokeRemoteRestService(jsonObject);
-
         String errorCode = jsonObjectResult.get("errorCode");
-
         return "0000".equals(errorCode);
     }
 
@@ -40,13 +40,8 @@ public class CatcherServiceImpl implements CatcherService{
         MediaType mediaType = MediaType.parseMediaType("application/json; charset=UTF-8");
         headers.setContentType(mediaType);
         headers.add("Accept", MediaType.APPLICATION_JSON.toString());
-
         HttpEntity<String> formEntity = new HttpEntity<String>(jsonObject.toString(), headers);
-
         Object jsonObjectResult = restTemplate.postForObject("http://47.95.214.207:8080/poseidon/operation/notify", formEntity, Object.class);
-
-        System.out.println("jsonObjectResult = " + jsonObjectResult.toString());
-
         return jsonObjectResult;
     }
 

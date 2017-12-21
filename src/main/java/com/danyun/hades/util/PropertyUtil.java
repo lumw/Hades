@@ -9,7 +9,6 @@ import java.util.Properties;
 
 public class PropertyUtil {
 
-    //private static final Logger logger = LoggerFactory.getLogger(PropertyUtil.class);
     private static Properties props;
 
     static {

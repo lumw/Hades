@@ -2,10 +2,7 @@ package com.danyun.hades.restserver;
 
 
 import com.danyun.hades.connection.container.SocketConnectionMap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,6 +40,6 @@ public class RestServerOutBoundHandler extends ChannelOutboundHandlerAdapter {
         }
 
         logger.info("发送给娃娃机的指令:" + msg);
-        SocketConnectionMap.getInstance().getMap().get(catcherId).writeAndFlush(msg);
+        ChannelFuture channelFuture = currChannel.writeAndFlush(msg);
     }
 }

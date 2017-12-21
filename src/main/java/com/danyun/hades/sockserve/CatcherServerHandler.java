@@ -18,6 +18,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AsciiString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,22 +61,15 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
             //将娃娃机与服务器链接注册进内存中
             if(SocketConnectionMap.getInstance().contains(catcherId)){
-
                 SocketConnectionMap.getInstance().remove(catcherId);
-                logger.info("娃娃机与服务器连接已经存在于队列中，删除失效连接，替换为新连接");
+                logger.info("娃娃机与服务器连接已经存在于连接管理器中，删除失效连接，替换为新连接");
             }
             SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
 
             logger.info("娃娃机[" + catcherId + "]从 " + ctx.channel().remoteAddress() + " 注册进入系统");
 
             //将娃娃机注册到Redis中
-            UfoCatcherRedis ufoCatcherRedis = new UfoCatcherRedis();
-            ufoCatcherRedis.setUFOCatcherId(catcherId);
-            ufoCatcherRedis.setOnlineStatus(ConstantString.Catcher_Online);
-            ufoCatcherRedis.setGameStatus(ConstantString.Catcher_Status_Free);
-            ufoCatcherRedis.setLoginTmDt(DateUtil.getCurrentTimeMillis());
-            ufoCatcherRedis.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
-            ufoCatcherDao.catcherRegist(ufoCatcherRedis);
+            initUfoCatcherRedis(catcherId);
 
             logger.info("已将娃娃机[" + catcherId + "]注册进入Redis中");
             rspStrToCatcher = catcherId + actionCode + "0000" + "\n";
@@ -91,6 +86,8 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             if (!SocketConnectionMap.getInstance().contains(catcherId)) {
                 SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
                 logger.info("重新将连接写入连接管理器中, 娃娃机编号" + catcherId);
+                initUfoCatcherRedis(catcherId);
+                logger.info("重新将初始化娃娃机信息到Redis中, 娃娃机编号" + catcherId);
             }
             ChannelFuture channelFuture = ctx.writeAndFlush(rspStrToCatcher);
             logger.info("应答心跳信息" + rspStrToCatcher);
@@ -100,9 +97,9 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
             String operationId = msgfromCatcher.substring(8, 16);
             String gameResult = msgfromCatcher.substring(16, 17);
-            System.out.println("operationId : " + operationId + ", 游戏结果: " + gameResult);
+            logger.info("收到游戏结果反馈, " + "operationId : " + operationId + ", 游戏结果: " + gameResult);
 
-            //解锁娃娃机，设置状态设置为玩家临时占用
+            //解锁娃娃机，设置状态设置为玩家临时占用 (因为要给玩家时间考虑是否继续游戏)
             UfoCatcherRedis ufoCatcher = ufoCatcherDao.get(catcherId);
             ufoCatcher.setGameStatus(ConstantString.Catcher_Status_Own);
             ufoCatcher.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
@@ -121,7 +118,6 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
                 logger.info("反馈游戏结果成功");
                 rspStrToCatcher = catcherId + actionCode + operationId + "0000" + "\n";
             }
-
             ctx.writeAndFlush(rspStrToCatcher);
         }
         //上机操作应答
@@ -141,40 +137,43 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
                 ufoCatcherRedis.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
                 ufoCatcherDao.update(ufoCatcherRedis);
             }
-
-            RestConnectionMap.getInstance().getMap().get(catcherId).pipeline().remove(RestServerOutBoundHandler.class);
-            byte[] jsonByteByte = rspJson.toString().getBytes();
-            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(jsonByteByte));
-            response.headers().set(CONTENT_TYPE, "application/json");
-            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
-            response.headers().set(CONNECTION, KEEP_ALIVE);
-
-            Channel channel = RestConnectionMap.getInstance().getMap().get(catcherId);
-            channel.writeAndFlush(response);
-            channel.close();
-            RestConnectionMap.getInstance().remove(catcherId);
+            if (responseToRestServer(rspJson, catcherId)) {
+                logger.info("成功发送应答数据到服务器");
+            } else {
+                logger.error("未能成功发送应答数据到服务器\"");
+            }
         } else { //其他应答指令
-
             logger.info("收到操作应答指令: " + msgfromCatcher);
-
             String resultCode = msgfromCatcher.substring(8, 12);
             JSONObject rspJson = new JSONObject();
             rspJson.put("resultCode", resultCode);
+            if (responseToRestServer(rspJson, catcherId)){
+                logger.info("成功发送应答数据到服务器");
+            }else {
+                logger.error("未能成功发送应答数据到服务器\"");
+            }
+        }
+    }
 
-            RestConnectionMap.getInstance().getMap().get(catcherId).pipeline().remove(RestServerOutBoundHandler.class);
+    public boolean responseToRestServer(JSONObject rspJson, String ufoCatcherId) {
+        Channel channel = RestConnectionMap.getInstance().getMap().get(ufoCatcherId);
+        if (null != channel) {
+            RestConnectionMap.getInstance().getMap().get(ufoCatcherId).pipeline().remove(RestServerOutBoundHandler.class);
             byte[] jsonByteByte = rspJson.toString().getBytes();
             FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(jsonByteByte));
             response.headers().set(CONTENT_TYPE, "application/json");
             response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
             response.headers().set(CONNECTION, KEEP_ALIVE);
-
-            Channel channel = RestConnectionMap.getInstance().getMap().get(catcherId);
             channel.writeAndFlush(response);
             channel.close();
-            RestConnectionMap.getInstance().remove(catcherId);
+            RestConnectionMap.getInstance().remove(ufoCatcherId);
+            return true;
+        } else {
+            logger.error("channel = null ....");
         }
-    }
 
+        return false;
+    }
     /*
      *
      * 覆盖 channelActive 方法 在channel被启用的时候触发 (在建立连接的时候)
@@ -193,11 +192,9 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
         String ufoCatcherId = SocketConnectionMap.getInstance().removeByValue(ctx.channel());
         logger.error("channelInactive + 与娃娃机" + ufoCatcherId + "的连接已经失效,删除对应的Channel");
-
         UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
         ufoCatcherDao.delete(ufoCatcherId);
         logger.error("channelInactive + 与娃娃机" + ufoCatcherId + "的连接已经失效,删除Redis中的记录");
-
         super.channelInactive(ctx);
     }
 
@@ -214,6 +211,36 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
         ctx.fireExceptionCaught(cause);
     }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt){
+
+        if (evt instanceof IdleStateEvent){
+            IdleStateEvent event = (IdleStateEvent) evt;
+            if (event.state() == IdleState.READER_IDLE){
+                logger.error("===服务端===(READER_IDLE 读超时)");
+                ctx.channel().close();
+            }else if (event.state() == IdleState.WRITER_IDLE){
+                logger.error("===服务端===(WRITER_IDLE  写超时)");
+                ctx.channel().close();
+            }
+
+        }
+    }
+
+    public void initUfoCatcherRedis(String ufoCatcherId){
+        UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
+        
+        UfoCatcherRedis ufoCatcherRedis = new UfoCatcherRedis();
+        ufoCatcherRedis.setUFOCatcherId(ufoCatcherId);
+        ufoCatcherRedis.setOnlineStatus(ConstantString.Catcher_Online);
+        ufoCatcherRedis.setGameStatus(ConstantString.Catcher_Status_Free);
+        ufoCatcherRedis.setLoginTmDt(DateUtil.getCurrentTimeMillis());
+        ufoCatcherRedis.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
+        ufoCatcherDao.catcherRegist(ufoCatcherRedis);
+    }
+
+
     public void setUfoCatcherDao(UfoCatcherDao ufoCatcherDao) {
         this.ufoCatcherDao = ufoCatcherDao;
     }
