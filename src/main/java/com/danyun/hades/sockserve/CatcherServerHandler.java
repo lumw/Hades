@@ -230,7 +230,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
 
     public void initUfoCatcherRedis(String ufoCatcherId){
         UfoCatcherRedisDaoImpl ufoCatcherDao = (UfoCatcherRedisDaoImpl) SpringContainer.getInstance().getBean("userDao");
-        
+
         UfoCatcherRedis ufoCatcherRedis = new UfoCatcherRedis();
         ufoCatcherRedis.setUFOCatcherId(ufoCatcherId);
         ufoCatcherRedis.setOnlineStatus(ConstantString.Catcher_Online);
