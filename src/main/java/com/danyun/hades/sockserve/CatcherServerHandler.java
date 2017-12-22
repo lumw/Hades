@@ -86,6 +86,8 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             if (!SocketConnectionMap.getInstance().contains(catcherId)) {
                 SocketConnectionMap.getInstance().put(catcherId, ctx.channel());
                 logger.info("重新将连接写入连接管理器中, 娃娃机编号" + catcherId);
+            }
+            if (!ufoCatcherDao.isUFOCatcherRegister(catcherId)) {
                 initUfoCatcherRedis(catcherId);
                 logger.info("重新将初始化娃娃机信息到Redis中, 娃娃机编号" + catcherId);
             }
@@ -219,10 +221,12 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             IdleStateEvent event = (IdleStateEvent) evt;
             if (event.state() == IdleState.READER_IDLE){
                 logger.error("===服务端===(READER_IDLE 读超时)");
-                ctx.channel().close();
+                ctx.close();
+                //ctx.channel().close();
             }else if (event.state() == IdleState.WRITER_IDLE){
                 logger.error("===服务端===(WRITER_IDLE  写超时)");
-                ctx.channel().close();
+                ctx.close();
+                //ctx.channel().close();
             }
 
         }

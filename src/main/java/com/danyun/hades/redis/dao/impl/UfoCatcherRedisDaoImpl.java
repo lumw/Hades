@@ -25,6 +25,11 @@ public class UfoCatcherRedisDaoImpl implements UfoCatcherDao{
         redisTemplate.opsForHash().delete(ConstantString.Reids_Key_CatcherStatus, catcherId);
     }
 
+    public boolean isUFOCatcherRegister(String catcherId){
+        redisTemplate = (RedisTemplate<String, Object>) SpringContainer.getInstance().getBean("redisTemplate");
+        return redisTemplate.opsForHash().hasKey(ConstantString.Reids_Key_CatcherStatus, catcherId);
+    }
+
     public void update(final UfoCatcherRedis ufoCatcher) {
 
         String key = ufoCatcher.getUFOCatcherId();
