@@ -2,6 +2,7 @@ package com.danyun.hades.sockserve.service.impl;
 
 
 import com.danyun.hades.sockserve.service.CatcherService;
+import com.danyun.hades.util.PropertyUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -41,7 +42,7 @@ public class CatcherServiceImpl implements CatcherService{
         headers.setContentType(mediaType);
         headers.add("Accept", MediaType.APPLICATION_JSON.toString());
         HttpEntity<String> formEntity = new HttpEntity<String>(jsonObject.toString(), headers);
-        Object jsonObjectResult = restTemplate.postForObject("http://47.95.214.207:8080/poseidon/operation/notify", formEntity, Object.class);
+        Object jsonObjectResult = restTemplate.postForObject(PropertyUtil.getProperty("Rest_Server_Url"), formEntity, Object.class);
         return jsonObjectResult;
     }
 

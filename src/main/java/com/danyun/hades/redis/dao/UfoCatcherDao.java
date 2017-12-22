@@ -1,7 +1,7 @@
 package com.danyun.hades.redis.dao;
 
 
-import com.danyun.hades.common.model.redis.UfoCatcherRedis;
+import com.danyun.common.model.redis.UfoCatcherRedis;
 
 public interface UfoCatcherDao {
 

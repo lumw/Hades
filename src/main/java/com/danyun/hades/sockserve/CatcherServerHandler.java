@@ -1,7 +1,7 @@
 package com.danyun.hades.sockserve;
 
 
-import com.danyun.hades.common.model.redis.UfoCatcherRedis;
+import com.danyun.common.model.redis.UfoCatcherRedis;
 import com.danyun.hades.connection.container.RestConnectionMap;
 import com.danyun.hades.connection.container.SocketConnectionMap;
 import com.danyun.hades.constant.ConstantString;
