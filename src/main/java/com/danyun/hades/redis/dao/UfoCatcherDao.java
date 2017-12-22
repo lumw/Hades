@@ -7,6 +7,8 @@ public interface UfoCatcherDao {
 
     void catcherRegist(UfoCatcherRedis catcher);
 
+    boolean isUFOCatcherRegister(String catcherId);
+
     void delete(String key);
 
     void update(UfoCatcherRedis ufoCatcher);
