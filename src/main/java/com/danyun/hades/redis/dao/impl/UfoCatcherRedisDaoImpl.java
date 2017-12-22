@@ -1,7 +1,7 @@
 package com.danyun.hades.redis.dao.impl;
 
 
-import com.danyun.hades.common.model.redis.UfoCatcherRedis;
+import com.danyun.common.model.redis.UfoCatcherRedis;
 import com.danyun.hades.constant.ConstantString;
 import com.danyun.hades.redis.dao.UfoCatcherDao;
 import com.danyun.hades.util.SpringContainer;
