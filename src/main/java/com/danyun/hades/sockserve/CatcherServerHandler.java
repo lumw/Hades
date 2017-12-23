@@ -137,6 +137,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
                 UfoCatcherRedis ufoCatcherRedis = ufoCatcherDao.get(catcherId);
                 ufoCatcherRedis.setGameStatus(ConstantString.Catcher_Status_Using);
                 ufoCatcherRedis.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
+                ufoCatcherRedis.setLastGameStartDtTm(DateUtil.getCurrentTimeMillis());
                 ufoCatcherDao.update(ufoCatcherRedis);
             }
             if (responseToRestServer(rspJson, catcherId)) {
