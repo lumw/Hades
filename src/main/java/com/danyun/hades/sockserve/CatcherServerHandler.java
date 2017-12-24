@@ -105,7 +105,7 @@ public class CatcherServerHandler extends SimpleChannelInboundHandler<String> {
             UfoCatcherRedis ufoCatcher = ufoCatcherDao.get(catcherId);
             ufoCatcher.setGameStatus(ConstantString.Catcher_Status_Own);
             ufoCatcher.setLastUpdateTmDt(DateUtil.getCurrentTimeMillis());
-            ufoCatcher.setLastGameEndDtTm(DateUtil.getCurrentTimeMillis());
+            //ufoCatcher.setLastGameEndDtTm(DateUtil.getCurrentTimeMillis());
             ufoCatcherDao.catcherRegist(ufoCatcher);
             logger.info("改变娃娃机状态成功,当前娃娃机状态:" + ConstantString.Catcher_Status_Own);
 
